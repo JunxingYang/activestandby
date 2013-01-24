@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?><!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_1.dtd'><nta><declaration>meta bool I_Side1FullyAvail;
+meta bool I_Side2FullyAvail;
+meta bool I_Side1Failed;
+meta bool I_Side2Failed;
+meta bool I_ManualSelection;
+
+broadcast chan in;
+chan to_ch[2];
+chan ch_out[2];
+const int CHAN_DELAY = 1;
+
+meta bool ch_data[2][3];</declaration><template><name>Side1</name><declaration>bool Side1FullyAvail = true;
+bool Side2FullyAvail = true;
+bool Side1Failed = false;
+bool ManualSelection = false;
+
+bool pre_Side1FullyAvail;
+bool pre_Side2FullyAvail;
+bool pre_Side1Failed;
+bool pre_ManualSelection;
+
+bool Mon1Side1FullyAvail;
+bool Mon1Side2FullyAvail;
+bool Side2BecomesActive;
+bool IsSide2Failed;
+bool Mon2Side1FullyAvail;
+bool Mon2Side2FullyAvail;
+
+int ActiveSide = 0;
+int pre_ActiveSide = 0;
+
+clock t;
+
+void to_channel()
+{
+	ch_data[0][0] = ActiveSide;
+	ch_data[0][1] = Mon1Side1FullyAvail;
+	ch_data[0][2] = Mon1Side2FullyAvail;
+}
+
+void assign_input()
+{
+	pre_Side1FullyAvail = Side1FullyAvail;
+	pre_Side2FullyAvail = Side2FullyAvail;
+	pre_Side1Failed = Side1Failed;
+	pre_ManualSelection = ManualSelection;
+
+	Side1FullyAvail = I_Side1FullyAvail;
+	Side2FullyAvail = I_Side2FullyAvail;
+	Side1Failed = I_Side1Failed;
+	ManualSelection = I_ManualSelection;
+	Mon1Side1FullyAvail = Side1FullyAvail;
+	Mon1Side2FullyAvail = Side2FullyAvail;
+
+	to_channel();
+}
+
+
+
+void from_channel()
+{
+	Side2BecomesActive =  (ch_data[1][0] == 2);
+	IsSide2Failed = (ch_data[1][0] == 0);
+	Mon2Side1FullyAvail = ch_data[1][1];
+	Mon2Side2FullyAvail = ch_data[1][2];
+}</declaration><location id="id0" x="-1976" y="-472"><name x="-1986" y="-502">entry</name></location><location id="id1" x="-1120" y="-320"><name x="-1136" y="-352">side2Active</name></location><location id="id2" x="-1360" y="-320"><name x="-1392" y="-352">side1Active</name></location><location id="id3" x="-1496" y="-320"><name x="-1544" y="-352">side1Wait</name><committed/></location><location id="id4" x="-1600" y="-320"><name x="-1696" y="-344">side2Running</name><committed/></location><location id="id5" x="-1600" y="-176"><name x="-1696" y="-192">side2Failed</name></location><location id="id6" x="-1744" y="-368"><name x="-1856" y="-376">side1Running</name><committed/></location><location id="id7" x="-1744" y="-544"><name x="-1840" y="-568">side1Failed</name></location><location id="id8" x="-1888" y="-480"><name x="-1920" y="-512">initial</name><committed/></location><init ref="id0"/><transition><source ref="id0"/><target ref="id8"/><label kind="synchronisation" x="-1944" y="-496">in?</label><label kind="assignment" x="-1984" y="-472">assign_input(),t=0</label></transition><transition><source ref="id1"/><target ref="id1"/><label kind="synchronisation" x="-1048" y="-352">ch_out[1]?</label><label kind="assignment" x="-1048" y="-336">from_channel()</label><nail x="-1064" y="-320"/><nail x="-1048" y="-336"/></transition><transition><source ref="id1"/><target ref="id1"/><label kind="synchronisation" x="-1056" y="-312">in?</label><label kind="assignment" x="-1064" y="-304">assign_input()</label><nail x="-1072" y="-288"/><nail x="-1072" y="-304"/></transition><transition><source ref="id2"/><target ref="id2"/><label kind="synchronisation" x="-1360" y="-288">ch_out[1]?</label><label kind="assignment" x="-1368" y="-272">from_channel()</label><nail x="-1352" y="-280"/><nail x="-1336" y="-288"/></transition><transition><source ref="id2"/><target ref="id2"/><label kind="synchronisation" x="-1424" y="-304">in?</label><label kind="assignment" x="-1464" y="-288">assign_input()</label><nail x="-1384" y="-280"/><nail x="-1368" y="-280"/></transition><transition><source ref="id5"/><target ref="id5"/><label kind="synchronisation" x="-1584" y="-152">ch_out[1]?</label><label kind="assignment" x="-1584" y="-136">from_channel()</label><nail x="-1616" y="-112"/><nail x="-1584" y="-112"/></transition><transition><source ref="id5"/><target ref="id5"/><label kind="synchronisation" x="-1712" y="-168">in?</label><label kind="assignment" x="-1776" y="-152">assign_input()</label><nail x="-1672" y="-144"/><nail x="-1664" y="-120"/></transition><transition><source ref="id7"/><target ref="id7"/><label kind="synchronisation" x="-1736" y="-608">ch_out[1]?</label><label kind="assignment" x="-1752" y="-592">from_channel()</label><nail x="-1728" y="-592"/><nail x="-1712" y="-560"/></transition><transition><source ref="id7"/><target ref="id7"/><label kind="synchronisation" x="-1784" y="-624">in?</label><label kind="assignment" x="-1848" y="-608">assign_input()</label><nail x="-1768" y="-592"/><nail x="-1768" y="-560"/></transition><transition><source ref="id1"/><target ref="id5"/><label kind="guard" x="-1216" y="-200">IsSide2Failed == true</label><label kind="synchronisation" x="-1216" y="-216">to_ch[0]!</label><label kind="assignment" x="-1216" y="-184">ActiveSide = 1, to_channel()</label><nail x="-1248" y="-168"/></transition><transition><source ref="id2"/><target ref="id5"/><label kind="guard" x="-1416" y="-232">IsSide2Failed == true</label><label kind="synchronisation" x="-1416" y="-248">to_ch[0]!</label><label kind="assignment" x="-1416" y="-216">ActiveSide = 1, to_channel()</label><nail x="-1432" y="-216"/></transition><transition><source ref="id3"/><target ref="id5"/><label kind="guard" x="-1584" y="-216">IsSide2Failed == true</label><label kind="synchronisation" x="-1584" y="-232">to_ch[0]!</label><label kind="assignment" x="-1584" y="-200">ActiveSide = 1, to_channel()</label><nail x="-1512" y="-216"/></transition><transition><source ref="id1"/><target ref="id7"/><label kind="guard" x="-1304" y="-488">Side1Failed == true</label><label kind="synchronisation" x="-1304" y="-504">to_ch[0]!</label><label kind="assignment" x="-1304" y="-472">ActiveSide = 0, to_channel()</label><nail x="-1440" y="-560"/></transition><transition><source ref="id2"/><target ref="id7"/><label kind="guard" x="-1304" y="-544">Side1Failed == true</label><label kind="synchronisation" x="-1304" y="-560">to_ch[0]!</label><label kind="assignment" x="-1304" y="-528">ActiveSide = 0, to_channel()</label><nail x="-1448" y="-552"/></transition><transition><source ref="id3"/><target ref="id7"/><label kind="guard" x="-1448" y="-592">Side1Failed == true</label><label kind="synchronisation" x="-1448" y="-608">to_ch[0]!</label><label kind="assignment" x="-1448" y="-576">ActiveSide = 0, to_channel()</label><nail x="-1464" y="-544"/></transition><transition><source ref="id4"/><target ref="id7"/><label kind="guard" x="-1648" y="-528">Side1Failed == true</label><label kind="synchronisation" x="-1640" y="-536">to_ch[0]!</label><label kind="assignment" x="-1640" y="-504">ActiveSide = 0, to_channel()</label><nail x="-1496" y="-528"/></transition><transition><source ref="id5"/><target ref="id7"/><label kind="guard" x="-1640" y="-600">Side1Failed == true</label><label kind="synchronisation" x="-1640" y="-568">to_ch[0]!</label><label kind="assignment" x="-1640" y="-584">ActiveSide = 0, to_channel()</label><nail x="-1488" y="-536"/></transition><transition><source ref="id1"/><target ref="id2"/><label kind="guard" x="-1240" y="-280">(Mon1Side1FullyAvail == true &amp;&amp; Mon2Side1FullyAvail == true) 
+&amp;&amp;(Mon1Side2FullyAvail==false || Mon2Side2FullyAvail == false)</label><label kind="synchronisation" x="-1208" y="-296">to_ch[0]!</label><label kind="assignment" x="-1248" y="-248">ActiveSide = 1, to_channel()</label><nail x="-1248" y="-272"/></transition><transition><source ref="id1"/><target ref="id2"/><label kind="guard" x="-1328" y="-336">ManualSelection == true</label><label kind="synchronisation" x="-1280" y="-360">to_ch[0]!</label><label kind="assignment" x="-1328" y="-312">ActiveSide = 1, to_channel()</label></transition><transition><source ref="id2"/><target ref="id1"/><label kind="guard" x="-1312" y="-400">Side2BecomesActive == true</label><label kind="synchronisation" x="-1312" y="-416">to_ch[0]!</label><label kind="assignment" x="-1312" y="-384">ActiveSide = 2, to_channel()</label><nail x="-1264" y="-384"/></transition><transition><source ref="id3"/><target ref="id2"/><label kind="synchronisation" x="-1456" y="-336">to_ch[0]!</label><label kind="assignment" x="-1488" y="-320">ActiveSide = 1, to_channel()</label></transition><transition><source ref="id4"/><target ref="id3"/><label kind="assignment" x="-1600" y="-296">ActiveSide = 1</label></transition><transition><source ref="id4"/><target ref="id5"/><label kind="guard" x="-1824" y="-248">IsSide2Failed == true</label><label kind="synchronisation" x="-1816" y="-272">to_ch[0]!</label><label kind="assignment" x="-1824" y="-232">ActiveSide = 1, to_channel()</label><nail x="-1712" y="-232"/></transition><transition><source ref="id5"/><target ref="id4"/><label kind="guard" x="-1656" y="-256">IsSide2Failed == false</label><label kind="assignment" x="-1632" y="-272">t = 0</label></transition><transition><source ref="id6"/><target ref="id4"/><label kind="guard" x="-1720" y="-376">IsSide2Failed == false</label></transition><transition><source ref="id6"/><target ref="id5"/><label kind="guard" x="-1888" y="-320">IsSide2Failed == true</label><label kind="synchronisation" x="-1880" y="-336">to_ch[0]!</label><label kind="assignment" x="-1904" y="-304">ActiveSide = 1, to_channel()</label><nail x="-1744" y="-208"/></transition><transition><source ref="id6"/><target ref="id7"/><label kind="guard" x="-1712" y="-448">Side1Failed == true</label><label kind="synchronisation" x="-1688" y="-480">to_ch[0]!</label><label kind="assignment" x="-1704" y="-440">ActiveSide = 0, to_channel()</label><nail x="-1664" y="-456"/></transition><transition><source ref="id7"/><target ref="id6"/><label kind="guard" x="-1832" y="-480">Side1Failed == false</label><label kind="assignment" x="-1800" y="-456">t = 0</label></transition><transition><source ref="id8"/><target ref="id6"/><label kind="guard" x="-1936" y="-432">Side1Failed == false</label></transition><transition><source ref="id8"/><target ref="id7"/><label kind="guard" x="-1912" y="-544">Side1Failed == true</label><label kind="synchronisation" x="-1880" y="-536">to_ch[0]!</label><label kind="assignment" x="-1936" y="-528">ActiveSide = 0, to_channel()</label></transition></template><template><name>Side2</name><declaration>bool Side1FullyAvail = true;
+bool Side2FullyAvail = true;
+bool Side2Failed = false;
+bool ManualSelection = false;
+
+bool pre_Side1FullyAvail;
+bool pre_Side2FullyAvail;
+bool pre_Side2Failed;
+bool pre_ManualSelection;
+
+bool Mon1Side1FullyAvail;
+bool Mon1Side2FullyAvail;
+bool Side1BecomesActive;
+bool IsSide1Failed;
+bool Mon2Side1FullyAvail;
+bool Mon2Side2FullyAvail;
+
+int ActiveSide = 0;
+int pre_ActiveSide = 0;
+
+clock t;
+
+
+void to_channel()
+{
+	ch_data[1][0] = ActiveSide;
+	ch_data[1][1] = Mon2Side1FullyAvail;
+	ch_data[1][2] = Mon2Side2FullyAvail;
+}
+
+void assign_input()
+{
+	pre_Side1FullyAvail = Side1FullyAvail;
+	pre_Side2FullyAvail = Side2FullyAvail;
+	pre_Side2Failed = Side2Failed;
+	pre_ManualSelection = ManualSelection;
+
+	Side1FullyAvail = I_Side1FullyAvail;
+	Side2FullyAvail = I_Side2FullyAvail;
+	Side2Failed = I_Side2Failed;
+	ManualSelection = I_ManualSelection;
+	Mon2Side1FullyAvail = Side1FullyAvail;
+	Mon2Side2FullyAvail = Side2FullyAvail;
+
+	to_channel();
+}
+
+
+void from_channel()
+{
+	Side1BecomesActive =  (ch_data[0][0] == 1);
+	IsSide1Failed = (ch_data[0][0] == 0);
+	Mon1Side1FullyAvail = ch_data[0][1];
+	Mon1Side2FullyAvail = ch_data[0][2];
+}</declaration><location id="id9" x="-1968" y="-464"><name x="-1978" y="-494">entry</name></location><location id="id10" x="-1120" y="-320"><name x="-1136" y="-352">side2Active</name></location><location id="id11" x="-1360" y="-320"><name x="-1392" y="-352">side1Active</name></location><location id="id12" x="-1488" y="-320"><name x="-1536" y="-352">side2Wait</name><committed/></location><location id="id13" x="-1600" y="-320"><name x="-1696" y="-336">side1Running</name><committed/></location><location id="id14" x="-1600" y="-176"><name x="-1680" y="-208">side1Failed</name></location><location id="id15" x="-1744" y="-368"><name x="-1856" y="-368">side2Running</name><committed/></location><location id="id16" x="-1744" y="-544"><name x="-1840" y="-568">side2Failed</name></location><location id="id17" x="-1888" y="-480"><name x="-1920" y="-512">initial</name><committed/></location><init ref="id9"/><transition><source ref="id9"/><target ref="id17"/><label kind="synchronisation" x="-1936" y="-488">in?</label><label kind="assignment" x="-1984" y="-456">assign_input(),t=0</label></transition><transition><source ref="id10"/><target ref="id10"/><label kind="synchronisation" x="-1040" y="-336">ch_out[0]?</label><label kind="assignment" x="-1048" y="-320">from_channel()</label><nail x="-1048" y="-304"/><nail x="-1048" y="-328"/></transition><transition><source ref="id10"/><target ref="id10"/><label kind="synchronisation" x="-1048" y="-280">in?</label><label kind="assignment" x="-1056" y="-264">assign_input()</label><nail x="-1072" y="-272"/><nail x="-1056" y="-280"/></transition><transition><source ref="id11"/><target ref="id11"/><label kind="synchronisation" x="-1368" y="-264">ch_out[0]?</label><label kind="assignment" x="-1368" y="-248">from_channel()</label><nail x="-1352" y="-256"/><nail x="-1328" y="-272"/></transition><transition><source ref="id11"/><target ref="id11"/><label kind="synchronisation" x="-1424" y="-288">in?</label><label kind="assignment" x="-1472" y="-272">assign_input()</label><nail x="-1384" y="-272"/><nail x="-1368" y="-256"/></transition><transition><source ref="id14"/><target ref="id14"/><label kind="synchronisation" x="-1608" y="-136">ch_out[0]?</label><label kind="assignment" x="-1608" y="-120">from_channel()</label><nail x="-1584" y="-128"/><nail x="-1568" y="-144"/></transition><transition><source ref="id14"/><target ref="id14"/><label kind="synchronisation" x="-1672" y="-160">in?</label><label kind="assignment" x="-1728" y="-144">assign_input()</label><nail x="-1624" y="-152"/><nail x="-1616" y="-136"/></transition><transition><source ref="id16"/><target ref="id16"/><label kind="synchronisation" x="-1720" y="-624">ch_out[0]?</label><label kind="assignment" x="-1720" y="-608">from_channel()</label><nail x="-1744" y="-616"/><nail x="-1720" y="-608"/></transition><transition><source ref="id16"/><target ref="id16"/><label kind="synchronisation" x="-1784" y="-616">in?</label><label kind="assignment" x="-1864" y="-600">assign_input()</label><nail x="-1768" y="-616"/><nail x="-1768" y="-584"/></transition><transition><source ref="id10"/><target ref="id11"/><label kind="guard" x="-1288" y="-288">Side1BecomesActive</label><label kind="synchronisation" x="-1264" y="-304">to_ch[1]!</label><label kind="assignment" x="-1288" y="-272">ActiveSide = 1, to_channel()</label><nail x="-1248" y="-288"/></transition><transition><source ref="id11"/><target ref="id10"/><label kind="guard" x="-1312" y="-344">ManualSelection == true</label><label kind="synchronisation" x="-1280" y="-360">to_ch[1]!</label><label kind="assignment" x="-1320" y="-320">ActiveSide = 2, to_channel()</label></transition><transition><source ref="id11"/><target ref="id10"/><label kind="guard" x="-1392" y="-432">(Mon1Side2FullyAvail == true &amp;&amp; Mon2Side2FullyAvail == true) 
+&amp;&amp;(Mon1Side1FullyAvail==false || Mon2Side1FullyAvail == false)</label><label kind="synchronisation" x="-1352" y="-448">to_ch[1]!</label><label kind="assignment" x="-1360" y="-400">ActiveSide = 2, to_channel()</label><nail x="-1248" y="-400"/></transition><transition><source ref="id10"/><target ref="id14"/><label kind="guard" x="-1232" y="-224">IsSide1Failed == true</label><label kind="synchronisation" x="-1232" y="-240">to_ch[1]!</label><label kind="assignment" x="-1232" y="-208">ActiveSide = 2, to_channel()</label><nail x="-1320" y="-168"/></transition><transition><source ref="id11"/><target ref="id14"/><label kind="guard" x="-1448" y="-216">IsSide1Failed == true</label><label kind="synchronisation" x="-1448" y="-240">to_ch[1]!</label><label kind="assignment" x="-1456" y="-200">ActiveSide = 2, to_channel()</label><nail x="-1496" y="-184"/></transition><transition><source ref="id12"/><target ref="id14"/><label kind="guard" x="-1544" y="-184">IsSide1Failed == true</label><label kind="synchronisation" x="-1544" y="-200">to_ch[1]!</label><label kind="assignment" x="-1544" y="-168">ActiveSide = 2, to_channel()</label><nail x="-1544" y="-192"/></transition><transition><source ref="id10"/><target ref="id16"/><label kind="guard" x="-1376" y="-496">Side2Failed == true</label><label kind="synchronisation" x="-1376" y="-512">to_ch[1]!</label><label kind="assignment" x="-1376" y="-480">ActiveSide = 0, to_channel()</label><nail x="-1440" y="-560"/></transition><transition><source ref="id11"/><target ref="id16"/><label kind="guard" x="-1440" y="-544">Side2Failed == true</label><label kind="synchronisation" x="-1440" y="-560">to_ch[1]!</label><label kind="assignment" x="-1440" y="-528">ActiveSide = 0, to_channel()</label><nail x="-1456" y="-544"/></transition><transition><source ref="id12"/><target ref="id16"/><label kind="guard" x="-1400" y="-592">Side2Failed == true</label><label kind="synchronisation" x="-1400" y="-608">to_ch[1]!</label><label kind="assignment" x="-1400" y="-576">ActiveSide = 0, to_channel()</label><nail x="-1472" y="-536"/></transition><transition><source ref="id13"/><target ref="id16"/><label kind="guard" x="-1632" y="-512">Side2Failed == true</label><label kind="synchronisation" x="-1632" y="-528">to_ch[1]!</label><label kind="assignment" x="-1632" y="-496">ActiveSide = 0, to_channel()</label><nail x="-1512" y="-520"/></transition><transition><source ref="id14"/><target ref="id16"/><label kind="guard" x="-1608" y="-592">Side2Failed == true</label><label kind="synchronisation" x="-1600" y="-608">to_ch[1]!</label><label kind="assignment" x="-1616" y="-576">ActiveSide = 0, to_channel()</label><nail x="-1488" y="-528"/></transition><transition><source ref="id12"/><target ref="id11"/><label kind="synchronisation" x="-1464" y="-336">to_ch[1]!</label><label kind="assignment" x="-1488" y="-312">ActiveSide = 1, to_channel()</label></transition><transition><source ref="id13"/><target ref="id12"/><label kind="assignment" x="-1592" y="-312">ActiveSide = 1</label></transition><transition><source ref="id13"/><target ref="id14"/><label kind="guard" x="-1808" y="-248">IsSide1Failed == true</label><label kind="synchronisation" x="-1808" y="-264">to_ch[1]!</label><label kind="assignment" x="-1808" y="-232">ActiveSide = 2, to_channel()</label><nail x="-1696" y="-240"/></transition><transition><source ref="id14"/><target ref="id13"/><label kind="guard" x="-1648" y="-272">IsSide1Failed == false</label><label kind="assignment" x="-1640" y="-256">t = 0</label></transition><transition><source ref="id15"/><target ref="id13"/><label kind="guard" x="-1712" y="-368">IsSide1Failed == false</label></transition><transition><source ref="id15"/><target ref="id14"/><label kind="guard" x="-1888" y="-320">IsSide1Failed == true</label><label kind="synchronisation" x="-1888" y="-336">to_ch[1]!</label><label kind="assignment" x="-1912" y="-304">ActiveSide = 2, to_channel()</label><nail x="-1744" y="-208"/></transition><transition><source ref="id15"/><target ref="id16"/><label kind="guard" x="-1680" y="-448">Side2Failed == true</label><label kind="synchronisation" x="-1680" y="-464">to_ch[1]!</label><label kind="assignment" x="-1680" y="-432">ActiveSide = 0, to_channel()</label><nail x="-1680" y="-416"/></transition><transition><source ref="id16"/><target ref="id15"/><label kind="guard" x="-1832" y="-472">Side2Failed == false</label><label kind="assignment" x="-1804" y="-456">t = 0</label></transition><transition><source ref="id17"/><target ref="id15"/><label kind="guard" x="-1936" y="-416">Side2Failed == false</label></transition><transition><source ref="id17"/><target ref="id16"/><label kind="guard" x="-1920" y="-544">Side2Failed == true</label><label kind="synchronisation" x="-1872" y="-528">to_ch[1]!</label><label kind="assignment" x="-1920" y="-528">ActiveSide = 0, to_channel()</label></transition></template><template><name>Channel</name><parameter>int id</parameter><declaration>clock t;</declaration><location id="id18" x="-664" y="-48"><name x="-674" y="-78">Recv</name><label kind="invariant" x="-674" y="-33">t &lt;= CHAN_DELAY</label></location><location id="id19" x="-736" y="-48"><name x="-768" y="-40">Idle</name></location><init ref="id19"/><transition><source ref="id18"/><target ref="id19"/><label kind="guard" x="-760" y="16">t &gt;= CHAN_DELAY</label><label kind="synchronisation" x="-736" y="0">ch_out[id]!</label><nail x="-696" y="0"/></transition><transition><source ref="id19"/><target ref="id18"/><label kind="synchronisation" x="-736" y="-120">to_ch[id]?</label><label kind="assignment" x="-720" y="-104">t = 0</label><nail x="-704" y="-88"/></transition></template><template><name>Input</name><declaration>clock t;</declaration><location id="id20" x="-296" y="-64"><name x="-306" y="-94">S0</name></location><init ref="id20"/><transition><source ref="id20"/><target ref="id20"/><label kind="select" x="-488" y="-112">a:int[0,1], b:int[0,1], c:int[0,1], d:int[0,1], e:int[0,1]</label><label kind="synchronisation" x="-400" y="-56">in!</label><label kind="assignment" x="-464" y="-32">I_Side1FullyAvail = a,
+I_Side2FullyAvail = b,
+I_Side1Failed = c,
+I_Side2Failed = d,
+I_ManualSelection = e,
+t = 0</label><nail x="-272" y="-16"/><nail x="-304" y="0"/></transition></template><system>P1 = Side1();
+P2 = Side2();
+Ch1 = Channel(0);
+Ch2 = Channel(1);
+I = Input();
+// List one or more processes to be composed into a system.
+system P1, P2, Ch1, Ch2, I;</system></nta>

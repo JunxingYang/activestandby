@@ -1,0 +1,255 @@
+meta bool I_Side1FullyAvail;
+meta bool I_Side2FullyAvail;
+meta bool I_Side1Failed;
+meta bool I_Side2Failed;
+meta bool I_ManualSelection;
+
+broadcast chan in;
+chan to_ch[2];
+chan ch_out[2];
+const int CHAN_DELAY = 1;
+
+meta bool ch_data[2][3];
+
+process Side1() {
+bool Side1FullyAvail = true;
+bool Side2FullyAvail = true;
+bool Side1Failed = false;
+bool ManualSelection = false;
+
+bool pre_Side1FullyAvail;
+bool pre_Side2FullyAvail;
+bool pre_Side1Failed;
+bool pre_ManualSelection;
+
+bool Mon1Side1FullyAvail;
+bool Mon1Side2FullyAvail;
+bool Side2BecomesActive;
+bool IsSide2Failed;
+bool Mon2Side1FullyAvail;
+bool Mon2Side2FullyAvail;
+
+int ActiveSide = 0;
+int pre_ActiveSide = 0;
+
+clock t;
+
+void to_channel()
+{
+	ch_data[0][0] = ActiveSide;
+	ch_data[0][1] = Mon1Side1FullyAvail;
+	ch_data[0][2] = Mon1Side2FullyAvail;
+}
+
+void assign_input()
+{
+	pre_Side1FullyAvail = Side1FullyAvail;
+	pre_Side2FullyAvail = Side2FullyAvail;
+	pre_Side1Failed = Side1Failed;
+	pre_ManualSelection = ManualSelection;
+
+	Side1FullyAvail = I_Side1FullyAvail;
+	Side2FullyAvail = I_Side2FullyAvail;
+	Side1Failed = I_Side1Failed;
+	ManualSelection = I_ManualSelection;
+	Mon1Side1FullyAvail = Side1FullyAvail;
+	Mon1Side2FullyAvail = Side2FullyAvail;
+
+	to_channel();
+}
+
+
+
+void from_channel()
+{
+	Side2BecomesActive =  (ch_data[1][0] == 2);
+	IsSide2Failed = (ch_data[1][0] == 0);
+	Mon2Side1FullyAvail = ch_data[1][1];
+	Mon2Side2FullyAvail = ch_data[1][2];
+}
+state
+    entry,
+    side2Active,
+    side1Active,
+    side1Wait,
+    side2Running,
+    side2Failed,
+    side1Running,
+    side1Failed,
+    initial;
+commit
+    side1Wait,
+    side2Running,
+    side1Running,
+    initial;
+init entry;
+trans
+    entry -> initial { sync in?; assign assign_input();  },
+    side2Active -> side2Active { sync ch_out[1]?; assign from_channel();  },
+    side2Active -> side2Active { sync in?; assign assign_input();  },
+    side1Active -> side1Active { sync ch_out[1]?; assign from_channel();  },
+    side1Active -> side1Active { sync in?; assign assign_input();  },
+    side2Failed -> side2Failed { sync ch_out[1]?; assign from_channel();  },
+    side2Failed -> side2Failed { sync in?; assign assign_input();  },
+    side1Failed -> side1Failed { sync ch_out[1]?; assign from_channel();  },
+    side1Failed -> side1Failed { sync in?; assign assign_input();  },
+    side2Active -> side2Failed { guard IsSide2Failed == true; sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side1Active -> side2Failed { guard IsSide2Failed == true; sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side1Wait -> side2Failed { guard IsSide2Failed == true; sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side2Active -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  },
+    side1Active -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  },
+    side1Wait -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  },
+    side2Running -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  },
+    side2Failed -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  },
+    side2Active -> side1Active { guard (Mon1Side1FullyAvail == true && Mon2Side1FullyAvail == true) 
+&&(Mon1Side2FullyAvail==false || Mon2Side2FullyAvail == false); sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side2Active -> side1Active { guard ManualSelection == true; sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side1Active -> side2Active { guard Side2BecomesActive == true; sync to_ch[0]!; assign ActiveSide = 2, to_channel();  },
+    side1Wait -> side1Active { sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side2Running -> side1Wait { assign ActiveSide = 1;  },
+    side2Running -> side2Failed { guard IsSide2Failed == true; sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side2Failed -> side2Running { guard IsSide2Failed == false; assign t = 0;  },
+    side1Running -> side2Running { guard IsSide2Failed == false;  },
+    side1Running -> side2Failed { guard IsSide2Failed == true; sync to_ch[0]!; assign ActiveSide = 1, to_channel();  },
+    side1Running -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  },
+    side1Failed -> side1Running { guard Side1Failed == false; assign t = 0;  },
+    initial -> side1Running { guard Side1Failed == false;  },
+    initial -> side1Failed { guard Side1Failed == true; sync to_ch[0]!; assign ActiveSide = 0, to_channel();  };
+}
+
+process Side2() {
+bool Side1FullyAvail = true;
+bool Side2FullyAvail = true;
+bool Side2Failed = false;
+bool ManualSelection = false;
+
+bool pre_Side1FullyAvail;
+bool pre_Side2FullyAvail;
+bool pre_Side2Failed;
+bool pre_ManualSelection;
+
+bool Mon1Side1FullyAvail;
+bool Mon1Side2FullyAvail;
+bool Side1BecomesActive;
+bool IsSide1Failed;
+bool Mon2Side1FullyAvail;
+bool Mon2Side2FullyAvail;
+
+int ActiveSide = 0;
+int pre_ActiveSide = 0;
+
+clock t;
+
+
+void to_channel()
+{
+	ch_data[1][0] = ActiveSide;
+	ch_data[1][1] = Mon2Side1FullyAvail;
+	ch_data[1][2] = Mon2Side2FullyAvail;
+}
+
+void assign_input()
+{
+	pre_Side1FullyAvail = Side1FullyAvail;
+	pre_Side2FullyAvail = Side2FullyAvail;
+	pre_Side2Failed = Side2Failed;
+	pre_ManualSelection = ManualSelection;
+
+	Side1FullyAvail = I_Side1FullyAvail;
+	Side2FullyAvail = I_Side2FullyAvail;
+	Side2Failed = I_Side2Failed;
+	ManualSelection = I_ManualSelection;
+	Mon2Side1FullyAvail = Side1FullyAvail;
+	Mon2Side2FullyAvail = Side2FullyAvail;
+
+	to_channel();
+}
+
+
+void from_channel()
+{
+	Side1BecomesActive =  (ch_data[0][0] == 1);
+	IsSide1Failed = (ch_data[0][0] == 0);
+	Mon1Side1FullyAvail = ch_data[0][1];
+	Mon1Side2FullyAvail = ch_data[0][2];
+}
+state
+    entry,
+    side2Active,
+    side1Active,
+    side2Wait,
+    side1Running,
+    side1Failed,
+    side2Running,
+    side2Failed,
+    initial;
+commit
+    side2Wait,
+    side1Running,
+    side2Running;
+init entry;
+trans
+    entry -> initial { sync in?; assign assign_input();  },
+    side2Active -> side2Active { sync ch_out[0]?; assign from_channel();  },
+    side2Active -> side2Active { sync in?; assign assign_input();  },
+    side1Active -> side1Active { sync ch_out[0]?; assign from_channel();  },
+    side1Active -> side1Active { sync in?; assign assign_input();  },
+    side1Failed -> side1Failed { sync ch_out[0]?; assign from_channel();  },
+    side1Failed -> side1Failed { sync in?; assign assign_input();  },
+    side2Failed -> side2Failed { sync ch_out[0]?; assign from_channel();  },
+    side2Failed -> side2Failed { sync in?; assign assign_input();  },
+    side2Active -> side1Active { guard Side1BecomesActive; sync to_ch[1]!; assign ActiveSide = 1, to_channel();  },
+    side1Active -> side2Active { guard ManualSelection == true; sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side1Active -> side2Active { guard (Mon1Side2FullyAvail == true && Mon2Side2FullyAvail == true) 
+&&(Mon1Side1FullyAvail==false || Mon2Side1FullyAvail == false); sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side2Active -> side1Failed { guard IsSide1Failed == true; sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side1Active -> side1Failed { guard IsSide1Failed == true; sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side2Wait -> side1Failed { guard IsSide1Failed == true; sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side2Active -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  },
+    side1Active -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  },
+    side2Wait -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  },
+    side1Running -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  },
+    side1Failed -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  },
+    side2Wait -> side1Active { sync to_ch[1]!; assign ActiveSide = 1, to_channel();  },
+    side1Running -> side2Wait { assign ActiveSide = 1;  },
+    side1Running -> side1Failed { guard IsSide1Failed == true; sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side1Failed -> side1Running { guard IsSide1Failed == false; assign t = 0;  },
+    side2Running -> side1Running { guard IsSide1Failed == false;  },
+    side2Running -> side1Failed { guard IsSide1Failed == true; sync to_ch[1]!; assign ActiveSide = 2, to_channel();  },
+    side2Running -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  },
+    side2Failed -> side2Running { guard Side2Failed == false; assign t = 0;  },
+    initial -> side2Running { guard Side2Failed == false;  },
+    initial -> side2Failed { guard Side2Failed == true; sync to_ch[1]!; assign ActiveSide = 0, to_channel();  };
+}
+
+process Channel(int id) {
+clock t;
+state
+    Recv {t <= CHAN_DELAY},
+    Idle;
+init Idle;
+trans
+    Recv -> Idle { guard t == CHAN_DELAY; sync ch_out[id]!;  },
+    Idle -> Recv { sync to_ch[id]?; assign t = 0;  };
+}
+
+process Input() {
+clock t;
+state
+    S0;
+init S0;
+trans
+    S0 -> S0 { select a:int[0,1], b:int[0,1], c:int[0,1], d:int[0,1], e:int[0,1]; sync in!; assign I_Side1FullyAvail = a,
+I_Side2FullyAvail = b,
+I_Side1Failed = c,
+I_Side2Failed = d,
+I_ManualSelection = e,
+t = 0;  };
+}
+P1 = Side1();
+P2 = Side2();
+Ch1 = Channel(0);
+Ch2 = Channel(1);
+I = Input();
+// List one or more processes to be composed into a system.
+system P1, P2, Ch1, Ch2, I;
